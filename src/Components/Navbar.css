@@ -1,0 +1,65 @@
+/* Filename: Navbar.css */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+    height: 50px;
+    text-align: center;
+    color: #009797; /* Updated to match VSCode text color */
+    width: 100%;
+    background-color: #1e1e1e; /* Updated to match VSCode navbar background */
+    gap: 20px;
+}
+
+#no {
+    height: 36px;
+    width: 80px;
+    font-size: 16px;
+    color: #d4d4d4; /* Updated to match VSCode input text color */
+    border: 1px solid #007acc; /* Updated to match VSCode border color */
+    border-radius: 4px;
+    background-color: #1e1e1e; /* Updated to match VSCode input background */
+}
+
+#no:focus {
+    outline: none;
+    border: 1px solid #007acc; /* Added focus border to match VSCode */
+}
+
+.css-2b097c-container {
+    width: 120px;
+    color: #d4d4d4; /* Updated to match VSCode text color */
+    background-color: #1e1e1e; /* Updated to match VSCode background */
+}
+
+.css-yk16xz-control {
+    background-color: #1e1e1e !important; /* Updated to match VSCode background */
+    border-color: #007acc !important; /* Updated to match VSCode border color */
+}
+
+
+#no {
+    height: 36px;
+    width: 80px;
+    font-size: 16px;
+    color: rgb(185, 185, 185);
+    border: 1px solid #afec3f;
+    border-radius: 4px;
+    background-color: #474747;
+}
+
+#no:focus {
+    outline: none;
+}
+
+.css-2b097c-container {
+    width: 120px;
+    color: black;
+    background-color: #474747;
+}
+
+.css-yk16xz-control {
+    background-color: #474747 !important;
+    border-color: #afec3f !important;
+}
