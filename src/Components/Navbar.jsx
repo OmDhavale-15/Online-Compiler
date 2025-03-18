@@ -3,7 +3,7 @@
 import React from "react";
 import Select from "react-select";
 import "./Navbar.css";
-
+import logo from "/vite.png";
 const Navbar = ({
   userLang,
   setUserLang,
@@ -25,7 +25,8 @@ const Navbar = ({
   ];
   return (
     <div className="navbar">
-      <h1>My Code Compiler</h1>
+      {/* <img src={logo} /> */}
+      <h1>CompileX</h1>
       <Select
         options={languages}
         value={userLang}
