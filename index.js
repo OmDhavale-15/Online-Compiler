@@ -52,15 +52,18 @@ async function executeCode(ws, code, language) {
   let stdinBuffer = [];
   ws.executionState = { inputBuffer: null, waitingForInput: false };
 
-  // Check if input is required
-  if (
-    code.includes("scanf") ||
-    code.includes("cin") ||
-    code.includes("input(")
-  ) {
+  // Detect how many inputs are required by counting occurrences of input functions
+  let inputCount =
+    (code.match(/input\(/g) || []).length +
+    (code.match(/scanf/g) || []).length +
+    (code.match(/cin/g) || []).length +
+    (code.match(/nextInt\(\)/g) || []).length;
+
+  for (let i = 0; i < inputCount; i++) {
     ws.send(JSON.stringify({ type: "input_request" }));
     ws.executionState.waitingForInput = true;
 
+    // Wait for input to be received
     while (ws.executionState.waitingForInput) {
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
@@ -73,7 +76,7 @@ async function executeCode(ws, code, language) {
     language: languageMap[language].language,
     version: languageMap[language].version,
     files: [{ name: "main", content: code }],
-    stdin: stdinBuffer.join("\n"),
+    stdin: stdinBuffer.join("\n"), // Pass multiple inputs as newline-separated values
   };
 
   try {
@@ -98,6 +101,7 @@ async function executeCode(ws, code, language) {
 
   ws.send(JSON.stringify({ type: "execution_complete" }));
 }
+
 
 // Function to compile a single line of code
 async function compileCode(code, language) {
