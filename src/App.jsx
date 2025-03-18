@@ -1,71 +1,63 @@
-
-// Filename: App.js
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import Editor from "@monaco-editor/react";
 import Navbar from "./Components/Navbar";
-import Axios from "axios";
-// import spinner from "./spinner.svg";
 
 function App() {
-  // State variable to set users source code
-  const [userCode, setUserCode] = useState(``);
-
-  // State variable to set editors default language
+  const [userCode, setUserCode] = useState("");
   const [userLang, setUserLang] = useState("python");
-
-  // State variable to set editors default theme
   const [userTheme, setUserTheme] = useState("vs-dark");
-
-  // State variable to set editors default font size
   const [fontSize, setFontSize] = useState(20);
+  const [terminalLines, setTerminalLines] = useState([]);
+  const [currentInput, setCurrentInput] = useState("");
+  const [socket, setSocket] = useState(null);
+  const [waitingForInput, setWaitingForInput] = useState(false);
 
-  // State variable to set users input
-  const [userInput, setUserInput] = useState("");
+  const options = { fontSize: fontSize };
 
-  // State variable to set users output
-  const [userOutput, setUserOutput] = useState("");
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.close();
+      }
+    };
+  }, [socket]);
 
-  // Loading state variable to show spinner
-  // while fetching data
-  const [loading, setLoading] = useState(false);
+  function startExecution() {
+    setTerminalLines([]);
+    setWaitingForInput(false);
+    const ws = new WebSocket("ws://localhost:8080");
+    setSocket(ws);
 
-  const options = {
-    fontSize: fontSize,
-  };
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ code: userCode, language: userLang }));
+    };
 
-  // Function to call the compile endpoint
-  function compile() {
-    setLoading(true);
-    if (userCode === ``) {
-      return;
-    }
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
 
-    // Post request to compile endpoint
-    Axios.post(`http://localhost:8000/compile`, {
-      code: userCode,
-      language: userLang,
-      input: userInput,
-    })
-      .then((res) => {
-        setUserOutput(res.data.stdout || res.data.stderr);
-      })
-      .then(() => {
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setUserOutput(
-          "Error: " + (err.response ? err.response.data.error : err.message)
-        );
-        setLoading(false);
-      });
+      if (data.type === "output") {
+        setTerminalLines((prev) => [...prev, data.line]);
+      } else if (data.type === "input_request") {
+        setWaitingForInput(true);
+        setTerminalLines((prev) => [...prev, "Waiting for input..."]);
+      } else if (data.type === "execution_complete") {
+        ws.close();
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
   }
 
-  // Function to clear the output screen
-  function clearOutput() {
-    setUserOutput("");
+  function handleInput(event) {
+    if (event.key === "Enter" && socket && waitingForInput) {
+      socket.send(JSON.stringify({ input: currentInput }));
+      setTerminalLines((prev) => [...prev.slice(0, -1), `> ${currentInput}`]);
+      setCurrentInput("");
+      setWaitingForInput(false);
+    }
   }
 
   return (
@@ -82,49 +74,35 @@ function App() {
         <div className="left-container">
           <Editor
             options={options}
-            height="calc(100vh - 200px)" // Adjusted height to allow space for the button
+            height="calc(100vh - 200px)"
             width="100%"
             theme={userTheme}
             language={userLang}
             defaultLanguage="python"
             defaultValue="# Enter your code here"
-            onChange={(value) => {
-              setUserCode(value);
-            }}
+            onChange={(value) => setUserCode(value)}
           />
-          <div style={{ marginTop: '10px' }}> {/* Added margin for spacing */}
-            <button className="run-btn" onClick={() => compile()}>
-              Run
-            </button>
-          </div>
+          <button className="run-btn" onClick={startExecution}>
+            Run
+          </button>
         </div>
         <div className="right-container">
-          <h4>Input:</h4>
-          <div className="input-box">
-            <textarea
-              id="code-inp"
-              onChange={(e) => setUserInput(e.target.value)}
-            ></textarea>
+          <h4>Terminal:</h4>
+          <div className="terminal-box">
+            {terminalLines.map((line, index) => (
+              <pre key={index}>{line}</pre>
+            ))}
+            {waitingForInput && (
+              <input
+                type="text"
+                className="terminal-input"
+                value={currentInput}
+                onChange={(e) => setCurrentInput(e.target.value)}
+                onKeyDown={handleInput}
+                placeholder="Type input here..."
+              />
+            )}
           </div>
-          <h4>Output:</h4>
-          {loading ? (
-            <div className="spinner-box">
-              {/* <img src={spinner} alt="Loading..." /> */}
-              Compiling...
-            </div>
-          ) : (
-            <div className="output-box">
-              <pre>{userOutput}</pre>
-              <button
-                onClick={() => {
-                  clearOutput();
-                }}
-                className="clear-btn"
-              >
-                Clear
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
